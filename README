@@ -1,5 +1,13 @@
 Hack Manhattan Usage Data Extractor
 cc David Reeves 2013
 
+Dependencies:
+
+BeautifulSoup
+matplotlib
+numpy
+
+Files:
+
 fsindex13.py 		Script to scrape webcam data from the webcam archive and analyse
 hmusage.py		Script to collect and analyse many days of data
