@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from matplotlib import dates
 
 
-
+np.set_printoptions(threshold='nan')
 
 # module to download webcam file listing from the HM webserver
 def getCamData (dt):
@@ -67,6 +67,27 @@ def lineGraph (timedataarray):
   plt.ion()
   plt.show()
 
+#draw heatmap of a week of hourly data
+
+def heatmap(wk):
+  print wk
+  row_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  column_labels = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '0', '1', '2']
+
+  fig,ax = plt.subplots()
+  heatmap = ax.pcolor(wk, cmap=plt.cm.Reds)
+
+  ax.set_xticks(np.arange(wk.shape[1])+0.5, minor=False)
+  ax.set_yticks(np.arange(wk.shape[0])+0.5, minor=False)
+  plt.xlabel("Hour (24h)", verticalalignment = 'top')
+
+  ax.invert_yaxis()
+  ax.xaxis.tick_top()
+
+  ax.set_yticklabels(row_labels, minor=False)
+  ax.set_xticklabels(column_labels, minor=False)
+  plt.ion()
+  plt.show()
 
 
 #replaces input fileSize data with the calculated differential
@@ -86,24 +107,26 @@ def daySpan(dt):
   dt1 = dt
   dt2 = dt + timedelta(days = 1)
 
+  if dt < date(2013, 11, 4):
+    DST = 1
+  else:
+    DST = 0  
+
   day1 = getCamData(dt1)
   day2 = getCamData(dt2)
 
   if (day1.size > 300):
-
     day1 = day1[480:]
     day2 = day2[:480]
-
   else:
-
     day1 = day1[48:]
     day2 = day2[:48]
 
   spliceday = np.concatenate((day1, day2), axis = 0)
-  gmtday = (spliceday[:,0] - timedelta(hours = 5))
+  gmtday = (spliceday[:,0] - timedelta(hours = (5-DST)))
 
   corrday = np.column_stack((gmtday,spliceday[:,1]))
- 
+  
   return corrday
 
 
@@ -118,15 +141,27 @@ def dayStats(timesizearray):
   print str(np.amin(tsa[:,1])) + ": minimum value"
   print str(np.amax(tsa[:,1])) + ": maximum value"
 
-  lightson = np.extract(tsa[:,1] > 45, tsa) # max daytime lights off filesize is < 45K mid-summer
+  condition = (tsa[:,1] >45)
+  lightson = np.extract(condition, tsa[:,0]) # max daytime lights off filesize is < 45K mid-summer
   lightson_min = len(lightson)
   lightson_hrs = lightson_min/((tsa.size/2)*0.04166667)
   usage = 100*lightson_min/(tsa.size/2)
 
+  hrs = [0]
+  for i in lightson:
+    hrs.append(i.hour)
+
+
+  hrs = np.array(hrs)
+  hist = np.bincount(hrs, minlength=24)
+  hist = hist / 60.0
+  hist = np.roll(hist, 21)
+  print hist
+
   print str(round(lightson_hrs,1)) + ": hours of lights on"
   print str(round(usage, 2)) + " % time usage"
 
-  return round(usage, 2)
+  return hist
 
 def weekStats(dt):
 
@@ -135,7 +170,10 @@ def weekStats(dt):
   for i in range(7):
     week.append(dayStats(daySpan((dt+timedelta(days = i)))))
 
+  week = np.array(week)
+
   print week
+  
   return week
 
 def monthStats(dt):
@@ -147,7 +185,12 @@ def monthStats(dt):
 
   montharr = np.array(month)
 
-  return montharr
+  meanweek = []
+  for i in range(7):
+    meanweek.append(np.mean(montharr[:,:,i]))
+
+  print meanweek
+  return meanweek
 
   
 # main loop
@@ -156,15 +199,15 @@ if __name__ == "__main__":
   print sys.argv
   d = date(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
 
-  a = daySpan(d)
+#  a = daySpan(d)
+#  lineGraph(a)
 
-  lineGraph(a)
+#  b = Activity(a)
+#  lineGraph(b)
 
-  b = Activity(a)
-  lineGraph(b)
-
-  dayStats(a)
-
-#  print monthStats(d)
+  w = weekStats(d)
+  heatmap(w)
+  
+# print monthStats(d)
 
   raw_input("Press Enter to continue")
