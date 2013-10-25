@@ -69,10 +69,10 @@ def lineGraph (timedataarray):
 
 #draw heatmap of a week of hourly data
 
-def heatmap(wk):
-  print wk
+def heatmap(wk):                        # where wk is a 24x7 array starting on Monday
+  
   row_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  column_labels = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '0', '1', '2']
+  column_labels = ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '0', '1', '2', '3']
 
   fig,ax = plt.subplots()
   heatmap = ax.pcolor(wk, cmap=plt.cm.Reds)
@@ -148,14 +148,14 @@ def dayStats(timesizearray):
   usage = 100*lightson_min/(tsa.size/2)
 
   hrs = [0]
-  for i in lightson:
+  for i in lightson:                # make a list of just t
     hrs.append(i.hour)
 
 
   hrs = np.array(hrs)
-  hist = np.bincount(hrs, minlength=24)
+  hist = np.bincount(hrs, minlength=24)  
   hist = hist / 60.0
-  hist = np.roll(hist, 21)
+  hist = np.roll(hist, 20)          # restore 3am-3am order
   print hist
 
   print str(round(lightson_hrs,1)) + ": hours of lights on"
@@ -176,7 +176,7 @@ def weekStats(dt):
   
   return week
 
-def monthStats(dt):
+def monthStats(dt):         # returns mean array of 4 24x7 arrays
 
   month = []
   
@@ -185,9 +185,7 @@ def monthStats(dt):
 
   montharr = np.array(month)
 
-  meanweek = []
-  for i in range(7):
-    meanweek.append(np.mean(montharr[:,:,i]))
+  meanweek = (montharr[0]+montharr[1]+montharr[2]+montharr[3])/4.0
 
   print meanweek
   return meanweek
@@ -205,7 +203,9 @@ if __name__ == "__main__":
 #  b = Activity(a)
 #  lineGraph(b)
 
-  w = weekStats(d)
+#  w = weekStats(d) # where d is a Monday
+  w = monthStats(d) # where d is a Monday
+
   heatmap(w)
   
 # print monthStats(d)
